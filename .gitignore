@@ -1,4 +1,5 @@
 data/
+fig/
 src/keys.py
 src/__pycache__
-src/borardor.ipynb
+src/borrador.ipynb
