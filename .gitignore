@@ -1,5 +1,8 @@
-data/
+src/data
 fig/
-src/keys.py
+src/old
 src/__pycache__
-src/borrador.ipynb
+src/notebooks/keys.py
+.vscode
+accounting_cheatsheet.pdf
+temp.html
