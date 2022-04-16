@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
-from urllib.request import urlopen
-from scipy.stats import circmean
-import requests
 import json
-import pandas as pd
 import datetime
+from urllib.request import urlopen
+import requests
+import pandas as pd
+import numpy as np
 import pandas_datareader.data as web
+from scipy.stats import circmean
 from fredapi import Fred
-from keys import fred_key, fmp_key
+from mykeys import fred_key, fmp_key
+
+
+def num_describe(data_in):
+    data_out = data_in.describe([.01,.02,.98,.99]).T
+    data_out = data_out.drop(columns='count')
+    data_out['skewness'] = data_in.skew()
+    data_out['kurtosis'] = data_in.kurtosis()
+    return data_out
 
 
 def get_fred(series_name, alt_name=''):
@@ -68,65 +77,19 @@ def get_submissions(CIK):
 
 
 def call_fmp_api(endpoint, ticker=None, periods=None):
-    """Calls the financial modeling prep API.
-    
-    Args:
-        endpoint: possible endpoints.
-        'income_quarterly', 'income_yearly', 'income_yoy',
-        'balance_quarterly', 'balance_yearly', 'income_yoy'
-        'cflow_quarterly', 'cflow_yearly', 'cflow_yoy'
-        'metrics_quarterly'
-        'market_cap'
-        ticker: company ticker
-        periods: if rquired, number of periods to get
-    """
+    """"""
     def get_jsonparsed_data(url):
         response = urlopen(url)
         data = response.read().decode("utf-8")
         return json.loads(data)
-
-    # Income Statements
-    if endpoint == 'income_quarterly':
-       url ="https://financialmodelingprep.com/api/v3/income-statement/{}?period=quarter&limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'income_yearly':
-       url ="https://financialmodelingprep.com/api/v3/income-statement/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'income_yoy':
-       url ="https://financialmodelingprep.com/api/v3/income-statement-growth/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    # Balance Sheet
-    elif endpoint == 'balance_quarterly':
-        url ="https://financialmodelingprep.com/api/v3/balance-sheet-statement/{}?period=quarter&limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'balance_yearly':
-        url ="https://financialmodelingprep.com/api/v3/balance-sheet-statement/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'balance_yoy':
-        url ="https://financialmodelingprep.com/api/v3/balance-sheet-statement-growth/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    # Cash Flow 
-    elif endpoint == 'cflow_quarterly':
-        url = "https://financialmodelingprep.com/api/v3/cash-flow-statement/{}?period=quarter&limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'cflow_yearly':
-        url ="https://financialmodelingprep.com/api/v3/cash-flow-statement/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    elif endpoint == 'cflow_yoy':
-        url ="https://financialmodelingprep.com/api/v3/cash-flow-statement-growth/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
-    # Metrics
-    elif endpoint == 'metrics_quarterly':
-        url = "https://financialmodelingprep.com/api/v3/key-metrics/{}?period=quarter&limit={}&apikey={}".format(ticker, periods, fmp_key)
-    # Daily Market Cap
-    elif endpoint == 'market_cap':
-        url = url = "https://financialmodelingprep.com/api/v3/historical-market-capitalization/{}?limit={}&apikey={}".format(ticker, periods, fmp_key)
+    # open json with urls
+    with open('./urls.json', 'rb') as f:
+        urls = json.load(f)
+    # get the url from the endpoint
+    url = urls['fmp'][endpoint].format(ticker, periods, fmp_key)
     data_json = get_jsonparsed_data(url)  
     df = pd.DataFrame(data_json)
     return df
-
-
-def check_duplicates(df, colnames):
-    """Checks for duplicates along a list of columns and returns the dataframe with all the duplicates"""
-    mask = df[colnames].duplicated(keep=False)
-    return df[mask]
-
-
-def check_duplicates(df, colnames):
-    """Checks for duplicates along a list of columns and returns the dataframe with all the duplicates"""
-    mask = df[colnames].duplicated(keep=False)
-    return df[mask]
 
 
 def dates_processing(df, *date_colnames):

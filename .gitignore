@@ -2,7 +2,7 @@ src/data
 fig/
 src/old
 src/__pycache__
-src/notebooks/keys.py
+src/notebooks/mykeys.py
 .vscode
 accounting_cheatsheet.pdf
 temp.html

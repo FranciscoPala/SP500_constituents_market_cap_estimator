@@ -15,6 +15,8 @@
 - Se han unido todos los estados financieros en una unica tabla. Se han convertido las variables numericas a miles de millones y se ha ajustado a la inflación.
 - Se ha obtenido la variable target (media móvel del market cap 10 dias despues de publicar resultados) y se ha unido a la tabla anterior de los estados financieros
 
+# Feature Engineering
+
 # Model Build
 ## Benchmark
 - Debido a que el numero inicial de variables es elevado (120) y existe mucha multiclonearidad, se han cogido todas las variables y se ha entrenado un algoritmo XGBoost de regresión que optimiza el error cuadrático medio con el objetivo de obtener
