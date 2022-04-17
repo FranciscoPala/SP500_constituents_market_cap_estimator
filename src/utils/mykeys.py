@@ -1,2 +1,0 @@
-fmp_key = '4e6888d2c868af952585f40a475b16c4'
-fred_key = '64a5e7c1c965c0df23eb4e8214ef1876'
