@@ -1,0 +1,9 @@
+{
+    "fmp":
+    {
+        "income_yearly" : "https://financialmodelingprep.com/api/v3/income-statement/{}?limit={}&apikey={}",
+        "balance_yearly": "https://financialmodelingprep.com/api/v3/balance-sheet-statement/{}?limit={}&apikey={}",
+        "cflow_yearly": "https://financialmodelingprep.com/api/v3/cash-flow-statement/{}?limit={}&apikey={}",
+        "market_cap": "https://financialmodelingprep.com/api/v3/historical-market-capitalization/{}?limit={}&apikey={}"
+    }
+}
