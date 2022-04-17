@@ -10,12 +10,142 @@ from scipy.stats import circmean
 from fredapi import Fred
 from mykeys import fred_key, fmp_key
 
+def generate_features(data):
+    """Generates features from input data
+
+    Args:
+        data (pd.DataFrame): _input data
+
+    Returns:
+        pd.DataFrame: Datafraeme with the features
+    """
+    # sort for increases
+    data = data.sort_values(by=['symbol', 'calendarYear'])
+    # pd.DataFrame to return
+    features = pd.DataFrame()
+    # target
+    features['target'] = data.target
+    # needed for increases & check results
+    features['symbol'] = data.symbol
+    features['calendarYear'] = data.calendarYear
+    features['filingDate'] = data.fillingDate
+    # add .000001 to denominators
+    data['totalAssets'] = data.totalAssets + 0.001001
+    data['revenue'] = data.revenue + 0.001001
+    data['freeCashFlow'] = data.freeCashFlow + 0.001001
+    data['ebitda'] = data.ebitda + 0.001001
+    data['totalStockholdersEquity'] = data.totalStockholdersEquity + 0.001001
+    
+    # Absolute Values
+    features['totalAssets'] = data.totalAssets
+    features['revenue'] = data.revenue
+    features['revenueYoY'] = features.groupby('symbol')['revenue'].pct_change(1)
+    features['revenueYoYSMA3'] = features.groupby('symbol', as_index=False)['revenueYoY'].rolling(window=3, min_periods=1).mean()['revenueYoY']
+    
+    # Mcap Features TODO add ytd min and ytd max ytd mean and ytd 
+    features['previousMarketCap'] = data.groupby('symbol')['target'].shift(1)
+    features['previousMarketCap'].fillna(method='bfill', inplace=True)
+    
+    # Balance Ratios
+    balance_features = [
+        # Assets
+        'cashAndCashEquivalents',
+        'shortTermInvestments',
+        'netReceivables',
+        'inventory',
+        'otherCurrentAssets',
+        'propertyPlantEquipmentNet',
+        'intangibleAssets',
+        'longTermInvestments',
+        'otherNonCurrentAssets',
+        # Liabilities
+        'accountPayables',
+        'shortTermDebt',
+        'deferredRevenue',
+        'otherCurrentLiabilities',
+        'longTermDebt',
+        'otherNonCurrentLiabilities',
+        # Equity
+        'retainedEarnings',
+        'totalStockholdersEquity',
+    ]
+    # Balance Vertical (ratio to Total Assets)
+    for col in balance_features:
+        feature_name = col+'ToAssets'
+        features[feature_name] = data[col]/data.totalAssets
+    # Aditional Balance Ratios
+    true_cash = data.cashAndCashEquivalents + data.shortTermInvestments + data.longTermInvestments
+    total_debt = data.shortTermDebt  + data.longTermDebt
+    features['netDebtToAssets'] = (total_debt - true_cash) / data.totalAssets
+    
+    # Income Ratios
+    income_features = [
+        'costOfRevenue',
+        'researchAndDevelopmentExpenses',
+        'sellingGeneralAndAdministrativeExpenses',
+        'ebitda',
+        'operatingIncome',
+        'netIncome',
+    ]
+    for col in income_features:
+        feature_name = col+'ToRevenue'
+        features[feature_name] = data[col]/data.revenue
+    # Income Horizontal
+    for col in income_features:
+        colname = col+'ToRevenue'
+        yoy_name = colname + 'YearOverYear'
+        features[yoy_name] = features.groupby('symbol')[colname].pct_change(1)
+    # Income Trend
+    for col in income_features:
+        colname = col+'ToRevenueYearOverYear'
+        trend_name = colname + 'SMA3'
+        features[trend_name] = features.groupby('symbol', as_index=False)[colname].rolling(window=3, min_periods=1).mean()[colname]
+
+    # Cash Flow Ratios
+    cflow_features = [
+        'stockBasedCompensation',
+        'depreciationAndAmortization',
+        'changeInWorkingCapital',
+        'freeCashFlow',
+        'capitalExpenditure',
+        'acquisitionsNet',
+        'purchasesOfInvestments',
+        'dividendsPaid',
+    ]
+    # Cash Flow Vertical
+    for col in cflow_features:
+        feature_name = col+'ToRevenue'
+        features[feature_name] = data[col]/data.revenue
+    # Aditional Cash Flow Ratios
+    net_shares = abs(data.commonStockRepurchased) - data.commonStockIssued
+    features['netSharesRepurchasedToRevenue'] = net_shares/data.revenue
+    # Cash Flow Horizontal
+    for col in cflow_features:
+        colname = col+'ToRevenue'
+        yoy_name = colname + 'YearOverYear'
+        features[yoy_name] = features.groupby('symbol')[colname].pct_change(1)
+    # Cash Flow Trend
+
+
+    # Mixed Values
+    features['freeCashFlowGivenToShareholders'] = (net_shares + abs(data.dividendsPaid)) / data.freeCashFlow # careful negative cash flow issuing stock
+    features['PPEtoSales'] = data.propertyPlantEquipmentNet / data.revenue
+    features['netDebtToEBITDA'] = (data.totalDebt - true_cash) / data.ebitda
+    features['roe'] = data.netIncome / data.totalStockholdersEquity
+    
+    # cleaning before return
+    # infinity to NaN
+    features.replace([np.inf, -np.inf], np.nan, inplace=True)
+    # null policy: set to 0
+    features = features.fillna(0)
+    return features
 
 def num_describe(data_in):
     data_out = data_in.describe([.01,.02,.98,.99]).T
     data_out = data_out.drop(columns='count')
-    data_out['skewness'] = data_in.skew()
-    data_out['kurtosis'] = data_in.kurtosis()
+    data_out.insert(0,'skewness', data_in.skew())
+    data_out.insert(0,'kurtosis', data_in.kurtosis())
+    data_out.insert(0,'sparsity', (data_in==0).sum()/len(data_in))
     return data_out
 
 
