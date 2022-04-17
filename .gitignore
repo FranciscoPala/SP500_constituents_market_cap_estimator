@@ -1,9 +1,9 @@
-src/data
+src/data/*
+!src/data/processed
 fig/
 src/old
 src/__pycache__
 src/notebooks/mykeys.py
 .vscode
-accounting_cheatsheet.pdf
 temp.html
 src/utils/mykeys.py
