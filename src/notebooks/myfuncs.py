@@ -28,7 +28,7 @@ def generate_features(data):
     # needed for increases & check results
     features['symbol'] = data.symbol
     features['calendarYear'] = data.calendarYear
-    features['filingDate'] = data.fillingDate
+    features['fillingDate'] = data.fillingDate
     # add .000001 to denominators
     data['totalAssets'] = data.totalAssets + 0.001001
     data['revenue'] = data.revenue + 0.001001
@@ -39,6 +39,10 @@ def generate_features(data):
     # Absolute Values
     features['totalAssets'] = data.totalAssets
     features['revenue'] = data.revenue
+    true_cash = data.cashAndCashEquivalents + data.shortTermInvestments + data.longTermInvestments
+    total_debt = data.shortTermDebt  + data.longTermDebt
+    features['netDebt'] = (total_debt - true_cash)
+    features['ebitda'] = data.ebitda
     features['revenueYoY'] = features.groupby('symbol')['revenue'].pct_change(1)
     features['revenueYoYSMA3'] = features.groupby('symbol', as_index=False)['revenueYoY'].rolling(window=3, min_periods=1).mean()['revenueYoY']
     
