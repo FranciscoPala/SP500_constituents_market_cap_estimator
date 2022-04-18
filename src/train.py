@@ -50,8 +50,8 @@ class Windsorizer(BaseEstimator, TransformerMixin):
 
 
 cwd = Path.cwd()
-data = pd.read_csv(cwd/'src'/'data'/'processed'/'train.csv')
-features = data.drop(columns=['target', 'symbol', 'calendarYear', 'filingDate'])
+data = pd.read_csv(cwd/'src'/'data'/'processed'/'train2.csv')
+features = data.drop(columns=['target'])
 target = data.target
 
 params = {
@@ -68,6 +68,6 @@ xgb_pipe = Pipeline(
             ('normalizer', PowerTransformer()),
             ('xgb', XGBRegressor(**params)),
         ])
-xgb_pipe.fit(features, np.log(target))
+xgb_pipe.fit(features, target)
 with open(cwd/'src'/'model'/'my_model.pickle', 'wb') as f:
     pickle.dump(xgb_pipe, f)

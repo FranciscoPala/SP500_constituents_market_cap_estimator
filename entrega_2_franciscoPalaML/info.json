@@ -1,0 +1,6 @@
+{
+    "nombre_alumno": "Francisco Pala",
+    "titulo": "Estimador Empresas del SP500",
+    "tipo_ml": "regresion",
+    "target": "target"
+}
