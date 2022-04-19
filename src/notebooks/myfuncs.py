@@ -35,7 +35,13 @@ def generate_features(data):
     data['freeCashFlow'] = data.freeCashFlow + 0.001001
     data['ebitda'] = data.ebitda + 0.001001
     data['totalStockholdersEquity'] = data.totalStockholdersEquity + 0.001001
-    
+
+    # Economic Conditions
+
+    # Mcap Features
+    features['previousMarketCap'] = data.groupby('symbol')['target'].shift(1)
+    features['previousMarketCap'].fillna(method='bfill', inplace=True)
+
     # Absolute Values
     features['totalAssets'] = data.totalAssets
     features['revenue'] = data.revenue
@@ -43,12 +49,13 @@ def generate_features(data):
     total_debt = data.shortTermDebt  + data.longTermDebt
     features['netDebt'] = (total_debt - true_cash)
     features['ebitda'] = data.ebitda
+    # Absolute Values Growth
     features['revenueYoY'] = features.groupby('symbol')['revenue'].pct_change(1)
     features['revenueYoYSMA3'] = features.groupby('symbol', as_index=False)['revenueYoY'].rolling(window=3, min_periods=1).mean()['revenueYoY']
-    
-    # Mcap Features TODO add ytd min and ytd max ytd mean and ytd 
-    features['previousMarketCap'] = data.groupby('symbol')['target'].shift(1)
-    features['previousMarketCap'].fillna(method='bfill', inplace=True)
+    features['netDebtYoY'] = features.groupby('symbol')['netDebt'].pct_change(1)
+    features['netDebtYoYSMA3'] = features.groupby('symbol', as_index=False)['netDebtYoY'].rolling(window=3, min_periods=1).mean()['netDebtYoY']
+    features['ebitdaYoY'] = features.groupby('symbol')['ebitda'].pct_change(1)
+    features['ebitdaYoYSMA3'] = features.groupby('symbol', as_index=False)['ebitdaYoY'].rolling(window=3, min_periods=1).mean()['ebitdaYoY']
     
     # Balance Ratios
     balance_features = [
@@ -129,7 +136,10 @@ def generate_features(data):
         yoy_name = colname + 'YearOverYear'
         features[yoy_name] = features.groupby('symbol')[colname].pct_change(1)
     # Cash Flow Trend
-
+    for col in cflow_features:
+        colname = col+'ToRevenueYearOverYear'
+        trend_name = colname + 'SMA3'
+        features[trend_name] = features.groupby('symbol', as_index=False)[colname].rolling(window=3, min_periods=1).mean()[colname]
 
     # Mixed Values
     features['freeCashFlowGivenToShareholders'] = (net_shares + abs(data.dividendsPaid)) / data.freeCashFlow # careful negative cash flow issuing stock
