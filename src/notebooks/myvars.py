@@ -118,6 +118,29 @@ input_features = [
     #'mcapYear',
     #'mcapWeek',
     'target',
+    # ECONOMIC CONDITIONS
+    'brent',
+    'chicagoFedFinancialConditions',
+    'consumerSentiment',
+    'corePCE',
+    'GDP',
+    'interest10Y',
+    'interest10Y3M',
+    'interest10YIInflationAdjusted',
+    'interest20Y',
+    'interest3M',
+    'inventorySalesRatio',
+    'leadingIndex',
+    'monthlySupplyHouses',
+    'moodysAaa20Y',
+    'moodysBaa20Y',
+    'mortgage30Y',
+    'nasdaq',
+    'stlouisFredFinancialStress',
+    'unemployment',
+    'volatility',
+    'wilshire5000',
+    'wti'
  ]
 
 to_billions_features = [

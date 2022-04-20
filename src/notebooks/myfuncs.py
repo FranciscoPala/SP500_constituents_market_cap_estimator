@@ -37,25 +37,60 @@ def generate_features(data):
     data['totalStockholdersEquity'] = data.totalStockholdersEquity + 0.001001
 
     # Economic Conditions
+    economic_features = [
+        'brent',
+        'chicagoFedFinancialConditions',
+        'consumerSentiment',
+        'corePCE',
+        'GDP',
+        'interest10Y',
+        'interest10Y3M',
+        'interest10YIInflationAdjusted',
+        'interest20Y',
+        'interest3M',
+        'inventorySalesRatio',
+        'leadingIndex',
+        'monthlySupplyHouses',
+        'moodysAaa20Y',
+        'moodysBaa20Y',
+        'mortgage30Y',
+        'nasdaq',
+        'stlouisFredFinancialStress',
+        'unemployment',
+        'volatility',
+        'wilshire5000',
+        'wti'
+    ]
+    for col in economic_features:
+        features[col] = data[col]
+    # Growth
+    for col in economic_features:
+        yoy_name = col + 'YearOverYear'
+        features[yoy_name] = features.groupby('symbol')[col].pct_change(1)
+    # Trend
+    for col in economic_features:
+        trend_name = col + 'SMA3'
+        features[trend_name] = features.groupby('symbol', as_index=False)[col].rolling(window=3, min_periods=1).mean()[col]
 
     # Mcap Features
     features['previousMarketCap'] = data.groupby('symbol')['target'].shift(1)
     features['previousMarketCap'].fillna(method='bfill', inplace=True)
+    features['targetYoY'] = features.groupby('symbol')['target'].pct_change(1)
 
     # Absolute Values
     features['totalAssets'] = data.totalAssets
-    features['revenue'] = data.revenue
     true_cash = data.cashAndCashEquivalents + data.shortTermInvestments + data.longTermInvestments
     total_debt = data.shortTermDebt  + data.longTermDebt
     features['netDebt'] = (total_debt - true_cash)
-    features['ebitda'] = data.ebitda
+    features['revenue'] = data.revenue
+    features['freeCashFlow'] = data.freeCashFlow
     # Absolute Values Growth
     features['revenueYoY'] = features.groupby('symbol')['revenue'].pct_change(1)
     features['revenueYoYSMA3'] = features.groupby('symbol', as_index=False)['revenueYoY'].rolling(window=3, min_periods=1).mean()['revenueYoY']
     features['netDebtYoY'] = features.groupby('symbol')['netDebt'].pct_change(1)
     features['netDebtYoYSMA3'] = features.groupby('symbol', as_index=False)['netDebtYoY'].rolling(window=3, min_periods=1).mean()['netDebtYoY']
-    features['ebitdaYoY'] = features.groupby('symbol')['ebitda'].pct_change(1)
-    features['ebitdaYoYSMA3'] = features.groupby('symbol', as_index=False)['ebitdaYoY'].rolling(window=3, min_periods=1).mean()['ebitdaYoY']
+    features['freeCashFlowYoY'] = features.groupby('symbol')['freeCashFlow'].pct_change(1)
+    features['freeCashFlowYoYSMA3'] = features.groupby('symbol', as_index=False)['freeCashFlowYoY'].rolling(window=3, min_periods=1).mean()['freeCashFlowYoY']
     
     # Balance Ratios
     balance_features = [
