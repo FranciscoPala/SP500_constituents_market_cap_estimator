@@ -74,6 +74,19 @@ def generate_features(data):
 
     # Mcap Features
     features['previousMarketCap'] = data.groupby('symbol')['target'].shift(1)
+    # companies with only 1 year
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'MRNA'), 'previousMarketCap'] = 58.56302555472
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'NXPI'), 'previousMarketCap'] = 53.11789218
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'TRMB'), 'previousMarketCap'] = 18.495856
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'CRL'), 'previousMarketCap'] = 14.03994341
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'PTC'), 'previousMarketCap'] = 11.4132228607542
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'SEDG'), 'previousMarketCap'] = 13.5400336411
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'MTCH'), 'previousMarketCap'] = 45.5847188219078
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'ENPH'), 'previousMarketCap'] = 26.752206558546
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'PENN'), 'previousMarketCap'] = 18.192836484350003
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'MPWR'), 'previousMarketCap'] = 17.6892658073466
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'BRO'), 'previousMarketCap'] = 12.5013695457742
+    features.loc[(features.calendarYear == 2021) & (features.symbol == 'EPAM'), 'previousMarketCap'] = 22.005622872
     features['previousMarketCap'].fillna(method='bfill', inplace=True)
     features['targetYoY'] = features.groupby('symbol')['target'].pct_change(1)
 
