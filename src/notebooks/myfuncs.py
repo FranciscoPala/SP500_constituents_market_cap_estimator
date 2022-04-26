@@ -322,20 +322,29 @@ def grouped_circmean(df, column, low, high, levels):
     return dict_means
 
 
-def circ_distance(v1, v2, low, high):
-    """Returns absolut distance between two cyclical values. Seems to work 
-    buut double check
+def circ_distance(value_1, value_2, low, high):
+    """Returns distance bweteen two cyclical values
+
+    Args:
+        value_1 (int,float): first value
+        value_2 (int,float): second value
+        low (int,float): _description_
+        high (int,float): _description_
+
+    Returns:
+        float: distance between two values
     """
     # minmax scale to 0-2pi rad
-    v1_rad = ((v1-low)/(high-low))*(2*np.pi)
-    v2_rad = ((v2-low)/(high-low))*(2*np.pi)
+    value_1_rad = ((value_1-low)/(high-low))*(2*np.pi)
+    value_2_rad = ((value_2-low)/(high-low))*(2*np.pi)
     # sin and cos for coordinates in the unit circle 
-    sin_v1, cos_v1 = np.sin(v1_rad), np.cos(v1_rad)
-    sin_v2, cos_v2 = np.sin(v2_rad), np.cos(v2_rad)
+    sin_value_1, cos_value_1 = np.sin(value_1_rad), np.cos(value_1_rad)
+    sin_value_2, cos_value_2 = np.sin(value_2_rad), np.cos(value_2_rad)
     # dot product is the arccos of alpha
-    angle = np.arccos(np.dot([cos_v1, sin_v1],[cos_v2, sin_v2]))
+    angle = np.arccos(np.dot([cos_value_1, sin_value_1],[cos_value_2, sin_value_2]))
     # convert back to initial units
     angle = angle*(high-low)/(2*np.pi) + low
+    # return distance
     return round(angle,3)
 
 
