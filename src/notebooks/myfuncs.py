@@ -203,11 +203,21 @@ def generate_features(data):
     return features
 
 def num_describe(data_in):
+    """returns a better vesion of describe
+
+    Args:
+        data_in (pd.DataFrame): input pandas DataFrame
+
+    Returns:
+        pd.DataFrame: output dataframe
+    """
+    # get extra percentiles
     data_out = data_in.describe([.01,.02,.98,.99]).T
     data_out = data_out.drop(columns='count')
     data_out.insert(0,'skewness', data_in.skew())
     data_out.insert(0,'kurtosis', data_in.kurtosis())
     data_out.insert(0,'sparsity', (data_in==0).sum()/len(data_in))
+    data_out.insert(0,'nulls', (data_in.isna()).sum()/len(data_in))
     return data_out
 
 
@@ -285,11 +295,7 @@ def call_fmp_api(endpoint, ticker=None, periods=None):
 
 
 def dates_processing(df, *date_colnames):
-    """Converts date columns to number and extracts month info.
-    
-    Keyword Arguments:
-    df -- dataframe to manipulate
-    date_colnames -- names of the columns to manipulate
+    """
     """
     # convert dates to numbers
     for colname in date_colnames:

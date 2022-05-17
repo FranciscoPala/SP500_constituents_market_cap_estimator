@@ -6,8 +6,8 @@ class Winsorizer(BaseEstimator, TransformerMixin):
     """_summary_
 
     Args:
-        BaseEstimator (class): sklearn BaseEstimator
-        TransformerMixin (class): _description_
+        BaseEstimator (_type_): _description_
+        TransformerMixin (_type_): _description_
     """
     def __init__(
         self,
