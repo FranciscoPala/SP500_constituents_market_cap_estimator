@@ -10,8 +10,8 @@
 - [Model Build](#model-build)
   - [EDA](#eda)
   - [Feature Engineering](#feature-engineering)
-  - [Performance Metrics](#performance-metrics)
   - [Model Selection](#model-selection)
+  - [Performance Metrics](#performance-metrics)
 - [Production](#production)
   - [Database Update](#database-update)
   - [Performance Monitoring](#performance-monitoring)
@@ -37,8 +37,8 @@ Relational database in PostrgreSQL with information on:
 # Model Build
 ## EDA
 ## Feature Engineering
-## Performance Metrics
 ## Model Selection
+## Performance Metrics
 # Production
 ## Database Update
 ## Performance Monitoring
