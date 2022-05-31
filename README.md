@@ -9,8 +9,8 @@
   - [EDA](#eda)
   - [Feature Engineering](#feature-engineering)
   - [Model Selection](#model-selection)
-    - [Results](#results)
-    - [Feature Importances](#feature-importances)
+    - [Best Estimator Results](#best-estimator-results)
+    - [Feature Importance](#feature-importance)
 - [Production](#production)
   - [Self-Updating Processes](#self-updating-processes)
   - [Performance Monitoring](#performance-monitoring)
@@ -61,12 +61,16 @@ The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai)
 - To correct for extreme kurtosis values winsorization (if percentiles 1-99) was needed (extreme tails relative to the iqr due to measurement errors). Created a Winsorizer class which inherits from sklearn BaseEstimar and TransformerMixin.
 - To correct for skeweness and normalize the features a yeo-johnson transformation was implemented using sklearn PowerTransformer class.
 - Log transformed the target.
-![Results](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/xgb_zoomed.jpg)
+<br>
+
+![Example of revenue Variable](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/revenue.png)
 ## Feature Engineering
 ## Model Selection
-### Results
+### Best Estimator Results
+<br>
+
 ![Results](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/xgb_zoomed.jpg)
-### Feature Importances
+### Feature Importance
 - The PreviousYearMarketCap feature adds up to ~50% of the average gain. It has been excluded for visualization purposes.
 ![Importances](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/importances_no_mcap.jpg)
 # Production
