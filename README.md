@@ -70,7 +70,7 @@ The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai)
 - 
 ## Model Selection
 
-[ModelsHeatmap](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/corr_modelos.jpg)
+![ModelsHeatmap](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/corr_modelos.jpg)
 ### Best Estimator Results
 <br>
 
