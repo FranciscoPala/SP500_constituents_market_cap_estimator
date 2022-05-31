@@ -9,6 +9,8 @@
   - [EDA](#eda)
   - [Feature Engineering](#feature-engineering)
   - [Model Selection](#model-selection)
+    - [Results](#results)
+    - [Feature Importances](#feature-importances)
 - [Production](#production)
   - [Self-Updating Processes](#self-updating-processes)
   - [Performance Monitoring](#performance-monitoring)
@@ -34,17 +36,39 @@ The result of all the gathering and cleaning processes are a series of tables, d
 - Called the Federal Reserve of Saint Louis API to get all the relevant economic series.
 - Called the SEC Fillings API to get the filling dates of the 10k Statements.
 ## Data Cleaning
-- 
+- Created a process that, given all symbols each day since 1996, extracts information on historical constituents and their stay in the index table.
+- Used information from the SEC filing dates to determine whether duplicate and other inconsistencies in 10K statements were due to amendments (10-K405 form) or change in fiscal (10-KT form).
+- Concatenated the Balance Sheet, Cash Flo and Income Statements of all symbols for the dates they were in the index.
+- Merged all if the above on symbol and calendar year to generate the Statements DataFrame
+- Dropped duplicated columns
+- Converted to Billions all currency features
+- Used Core PCE to generate an inflation multiplier and adjusted all historical prices to current prices.
+- For each symbol + filing date in the statement generated the target variable by: calculating the simple moving average of the daily market cap 10 days after the filing date and joining it with the filing date. Also did it for the weekly average in case there wasn't a measurement for the SMA10 on the filing date + 10 days.
+- Adjusted the target variable to inflation
+- Dropped null observations
+- Used yoy increases in key variables like totalAssets or MarketCap to identify measurement errors in the data. Dropped the identified observations.
+- Joined the economic situation variables on date. For weekly/monthly/quarterly data interpolated the missing values.
+- Joined Economic situation data with the financial statements on filing date
 ## Future Developments
 - Refactor everything.
-- Change primary keys to SEC [Central Index Key](https://en.wikipedia.org/wiki/Central_Index_Key)
+- Change primary keys to SEC [Central Index Key](https://en.wikipedia.org/wiki/Central_Index_Key). This essential because sometimes companies will change their name and ticker but their CIK will remain. I couldn't however find a comprehensive list of all tickers and would need to do the research for about 400 of them manually.
 - Get a more complete (and hopefully not too expensive) API. Right now only 609 of the 1000 constituents since 1996 have financial statements data, making the model biased towards successful companies.
+- Upload everything to AWS RDS in postgreSQL and create the updating processes
 # Most Viable Model
 The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai) because it is a compromise between sufficient complexity (an ensemble of decision trees with regularization) and interpretability (returns a feature importance based on information gain)
 ## EDA
+- Given the amount of modeling features (147) assessed the data programmatically by creating a function which, for every numerical feature, returns sparsity, kurtosis, skeweness, mean, standard deviation, and percentiles 0, 1, 2, 50, 98, 99, 100.
+- To correct for extreme kurtosis values winsorization (if percentiles 1-99) was needed (extreme tails relative to the iqr due to measurement errors). Created a Winsorizer class which inherits from sklearn BaseEstimar and TransformerMixin.
+- To correct for skeweness and normalize the features a yeo-johnson transformation was implemented using sklearn PowerTransformer class.
+- Log transformed the target.
+![Results](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/xgb_zoomed.jpg)
 ## Feature Engineering
 ## Model Selection
+### Results
 ![Results](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/xgb_zoomed.jpg)
+### Feature Importances
+- The PreviousYearMarketCap feature adds up to ~50% of the average gain. It has been excluded for visualization purposes.
+![Importances](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/importances_no_mcap.jpg)
 # Production
 ## Self-Updating Processes
 ## Performance Monitoring
