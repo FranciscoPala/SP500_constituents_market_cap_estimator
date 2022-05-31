@@ -44,7 +44,7 @@ The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai)
 ## EDA
 ## Feature Engineering
 ## Model Selection
-(readme_figures/importances_no_mcap.jpg)
+![Results](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/xgb_zoomed.jpg)
 # Production
 ## Self-Updating Processes
 ## Performance Monitoring
