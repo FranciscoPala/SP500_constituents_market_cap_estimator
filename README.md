@@ -63,9 +63,14 @@ The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai)
 - Log transformed the target.
 <br>
 
+**Example of high asymmetry and wide tails for the revenue variable**
+
 ![Example of revenue Variable](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/revenue.png)
 ## Feature Engineering
+- 
 ## Model Selection
+
+[ModelsHeatmap](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/corr_modelos.jpg)
 ### Best Estimator Results
 <br>
 
