@@ -1,14 +1,80 @@
 # -*- coding: utf-8 -*-
 import json
 import datetime
-from urllib.request import urlopen
 import requests
 import pandas as pd
 import numpy as np
 import pandas_datareader.data as web
+import optuna
+from urllib.request import urlopen
 from scipy.stats import circmean
 from fredapi import Fred
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PowerTransformer
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import LinearSVR, SVR
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_selection import RFE
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error, 
+    r2_score,
+)
 from mykeys import fred_key, fmp_key
+
+
+def init_companies_table():
+    """Wrapper for one time initializer of the creation of the unique historical
+    constituents table
+
+    Returns:
+        companies: pd.DataFrame representing the initial state of the table
+    """
+    # read wikipedia table data & basic formatting
+    current_companies = pd.read_csv('../data/raw/companies_wiki.csv')
+    current_companies = current_companies.drop(columns='SEC filings')
+    colnames = [
+        'symbol',
+        'name',
+        'sector',
+        'subSector',
+        'hq',
+        'dateFirstAdded',
+        'cik',
+        'founded',
+    ]
+    current_companies.columns = colnames
+    # read time series table with constituents and convert to list
+    companies_ts = pd.read_csv('../data/raw/historical_companies_TradingEvolved.csv')
+    companies_ts['tickers_filtered'] = companies_ts.tickers.str.split(',')
+    # get all unique constituents
+    results = set()
+    companies_ts.tickers_filtered.apply(results.update)
+    companies = pd.DataFrame(data = results, columns = ['symbol'])
+    # merge both tables
+    current_companies['currentConstituent'] = True
+    companies = companies.merge(current_companies, how='left')
+    companies = companies.drop(columns=['dateFirstAdded'])
+    companies.currentConstituent = companies.currentConstituent.fillna(False)
+    # add ciks to the symbols from the time series
+    ciks = pd.read_csv('../data/raw/CIK.csv', index_col = 0)
+    ciks.columns = ['cik_sec_list', 'symbol', 'title']
+    companies = companies.merge(ciks, how='left')
+    companies.name = companies.name.fillna(companies.title)
+    companies.cik = companies.cik.fillna(companies.cik_sec_list)
+
+    return companies
+
+
+
+def init_stays_table():
+    return None
+
+
+def init_statements_table():
+    return None
+
 
 def generate_features(data):
     """Generates features from input data
@@ -202,6 +268,7 @@ def generate_features(data):
     features = features.fillna(0)
     return features
 
+
 def num_describe(data_in):
     """returns a better vesion of describe
 
@@ -372,3 +439,143 @@ def infer_period(symbol_observation, yday_observation, ref_dict):
             # update infered period with its coresponding period
             infered_period = period
     return infered_period
+
+
+def print_regression_metrics(model, X_train, X_test, y_train, y_test):
+    train_preds = model.predict(X_train)
+    test_preds = model.predict(X_test)
+    # mean absolute error
+    print('train mae: ', mean_absolute_error(y_true=y_train, y_pred=train_preds))
+    print('test mae: ', mean_absolute_error(y_true=y_test, y_pred=test_preds))
+    # mean sqared error
+    print('train mse: ', mean_squared_error(y_true=y_train, y_pred=train_preds))
+    print('test mse: ', mean_squared_error(y_true=y_test, y_pred=test_preds))
+    # r2
+    print('train r2: ', r2_score(y_true=y_train, y_pred=train_preds))
+    print('test r2: ', r2_score(y_true=y_test, y_pred=test_preds))
+    return None
+
+
+def do_linear_regression(pipe, X_train, X_test, y_train, y_test=None):
+    pipe.steps.append(('linear_regression', LinearRegression()))
+    pipe.fit(X_train, y_train)
+    preds_test = pipe.predict(X_test)
+    preds_train = pipe.predict(X_train)
+    mse_test = mean_squared_error(y_true=np.exp(y_test), y_pred=np.exp(preds_test))
+    mse_train = mean_squared_error(y_true=np.exp(y_train), y_pred=np.exp(preds_train))
+    print('mse train:', mse_train)
+    print('mse test: ', mse_test)
+    print('rmse test: ', np.sqrt(mse_test))
+
+
+def do_poly_regression(pipe, X_train, X_test, y_train, y_test=None, degree = 2):
+    pipe.steps.append(('poly_transform', PolynomialFeatures(degree=degree)))
+    pipe.steps.append(('regression', LinearRegression()))
+    pipe.fit(X_train, y_train)
+    preds_test = pipe.predict(X_test)
+    preds_train = pipe.predict(X_train)
+    mse_test = mean_squared_error(y_true=np.exp(y_test), y_pred=np.exp(preds_test))
+    mae_test = mean_absolute_error(y_true=np.exp(y_test), y_pred=np.exp(preds_test))
+    mse_train = mean_squared_error(y_true=np.exp(y_train), y_pred=np.exp(preds_train))
+    print('mse train:', mse_train)
+    print('mse test: ', mse_test)
+    print('mae test: ', mae_test)
+    print('rmse test: ', np.sqrt(mse_test))
+    return pipe
+
+
+def do_linear_svm_regression(pipe, X_train, X_test, y_train, y_test=None):
+    pipe.steps.append(('linear_svm', LinearSVR(C=0.02, max_iter=1000)))
+    pipe.fit(X_train, y_train)
+    preds_test = pipe.predict(X_test)
+    preds_train = pipe.predict(X_train)
+    mse_test = mean_squared_error(y_true=np.exp(y_test), y_pred=np.exp(preds_test))
+    mse_train = mean_squared_error(y_true=np.exp(y_train), y_pred=np.exp(preds_train))
+    print('mse train:', mse_train)
+    print('mse test: ', mse_test)
+    print('rmse test: ', np.sqrt(mse_test))
+
+
+def do_svm_regression(pipe, C, epsilon, X_train, X_test, y_train, y_test=None):
+    pipe.steps.append(('rbf_svm', SVR(kernel = 'rbf', C=C, epsilon=epsilon)))
+    pipe.fit(X_train, y_train)
+    preds_test = pipe.predict(X_test)
+    preds_train = pipe.predict(X_train)
+    mse_test = mean_squared_error(y_true=np.exp(y_test), y_pred=np.exp(preds_test))
+    mse_train = mean_squared_error(y_true=np.exp(y_train), y_pred=np.exp(preds_train))
+    print('mse train:', mse_train)
+    print('mse test: ', mse_test)
+    print('rmse test: ', np.sqrt(mse_test))
+    return pipe
+
+
+def do_neighbors(X_train, X_test, y_train, y_test=None):
+    def objective(trial):
+        n_features_to_select = trial.suggest_int("n_features_to_select", 1, 10)
+        knn_params = {
+            "n_neighbors": trial.suggest_int("n_neighbors", 1, 10),
+        }
+        pipe = Pipeline(steps=[
+            ('RFE', RFE(estimator = LinearRegression(), n_features_to_select=n_features_to_select)),
+            ('KNN', KNeighborsRegressor(**knn_params)),
+        ])
+        pipe.fit(X_train, y_train)
+        preds = pipe.predict(X_test)
+        mae = mean_absolute_error(y_true=np.exp(y_test), y_pred=np.exp(preds))
+        return mae
+    minutes = 10
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, timeout=(60*minutes))
+    results = study.trials_dataframe()
+    return results, study
+
+
+def search_forest(X_train, X_test, y_train, y_test):
+    def objective(trial):
+        params={
+            "min_samples_leaf": trial.suggest_float("min_samples_leaf", 1e-4, 0.1, log=True),
+            "min_samples_split": trial.suggest_float("min_samples_split", 1e-4, 0.1, log=True),
+            "max_depth" : trial.suggest_int("max_depth", 5, 10),
+            }
+        pipe = Pipeline(steps=[
+            ('scaler', PowerTransformer()),
+            ('forest', RandomForestRegressor(**params)),
+            ])
+        pipe.fit(X_train,y_train)
+        preds = pipe.predict(X_test)
+        mae = mean_absolute_error(y_true=np.exp(y_test), y_pred=np.exp(preds))
+        return mae
+    minutes = 10
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, timeout=(60*minutes))
+    results = study.trials_dataframe()
+    return results, study
+
+
+def search_boosting(pipe, X_train, X_test, y_train, y_test):
+    def objective(trial):
+        params={
+            "objective": "reg:squarederror",
+            "eval_metric": "rmse",
+            "booster": "gbtree",
+            "min_child_weight": trial.suggest_int("min_child_weight", 20, 500),
+            "alpha": trial.suggest_float("alpha", 1e-6, 1.0, log=True),
+            "max_depth" : trial.suggest_int("max_depth", 5, 10),
+            "colsample_bytree" : trial.suggest_float("colsample_bytree", 0.4, 1),
+            "subsample" : trial.suggest_float("subsample", 0.5, 1),
+            "eta" : trial.suggest_float("eta", 1e-2, 0.2, log=True)
+            }
+        pipe = Pipeline(steps=[
+            ('scaler', PowerTransformer()),
+            ('xgb', xgboost.XGBRegressor(**params)),
+            ])
+        pipe.fit(X_train,y_train)
+        preds = pipe.predict(X_test)
+        mae = mean_absolute_error(y_true=np.exp(y_test), y_pred=np.exp(preds))
+        return mae
+
+    minutes = 10
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, timeout=(60*minutes))
+    results = study.trials_dataframe()
+    return results, study

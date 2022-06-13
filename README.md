@@ -4,6 +4,8 @@
   - [Tables Description](#tables-description)
   - [Data Gathering](#data-gathering)
   - [Data Cleaning](#data-cleaning)
+    - [Unique Historical Constituents Table](#unique-historical-constituents-table)
+    - [Historical Stays Table](#historical-stays-table)
   - [Future Developments](#future-developments)
 - [Most Viable Model](#most-viable-model)
   - [EDA](#eda)
@@ -36,7 +38,10 @@ The result of all the gathering and cleaning processes are a series of tables, d
 - Called the Federal Reserve of Saint Louis API to get all the relevant economic series.
 - Called the SEC Fillings API to get the filling dates of the 10k Statements.
 ## Data Cleaning
-- Created a process that, given all symbols each day since 1996, extracts information on historical constituents and their stay in the index table.
+### Unique Historical Constituents Table
+- Created a process which initializes the unique constituents by selecting unique tickers from the tables gathered above obtaining 1125 different constituents since 1996.
+### Historical Stays Table
+- Created a process that, given the daily time series of constituents since 1996, extracts information on each historical constituent stay in the index
 - Used information from the SEC filing dates to determine whether duplicate and other inconsistencies in 10K statements were due to amendments (10-K405 form) or change in fiscal (10-KT form).
 - Concatenated the Balance Sheet, Cash Flo and Income Statements of all symbols for the dates they were in the index.
 - Merged all if the above on symbol and calendar year to generate the Statements DataFrame
@@ -50,7 +55,8 @@ The result of all the gathering and cleaning processes are a series of tables, d
 - Joined the economic situation variables on date. For weekly/monthly/quarterly data interpolated the missing values.
 - Joined Economic situation data with the financial statements on filing date
 ## Future Developments
-- Refactor everything.
+- Historical Constituents Table:
+  - get missing CIK's 
 - Change primary keys to SEC [Central Index Key](https://en.wikipedia.org/wiki/Central_Index_Key). This essential because sometimes companies will change their name and ticker but their CIK will remain. I couldn't however find a comprehensive list of all tickers and would need to do the research for about 400 of them manually.
 - Get a more complete (and hopefully not too expensive) API. Right now only 609 of the 1000 constituents since 1996 have financial statements data, making the model biased towards successful companies.
 - Upload everything to AWS RDS in postgreSQL and create the updating processes
@@ -69,7 +75,7 @@ The Most Viable Model used is based on the [XGBoost Library](https://xgboost.ai)
 ## Feature Engineering
 - 
 ## Model Selection
-
+- Fitted a regressor based on the Linear Regression, KNN, SVM, Random forest and Gradient Boosting algorithms and 
 ![ModelsHeatmap](https://github.com/FranciscoPala/SP500_constituents_market_cap_estimator/blob/master/readme_figures/corr_modelos.jpg)
 ### Best Estimator Results
 <br>
